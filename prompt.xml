@@ -1,0 +1,13 @@
+<instruction>
+Github에 Commit & Push
+</instruction>
+
+<task>
+1. .gitignore 작성
+2. remote repository 연결
+3. commit 단위로 commit & push
+</task>
+
+<ref>
+https://github.com/ONE0x393/ticktick-skills
+</ref>
