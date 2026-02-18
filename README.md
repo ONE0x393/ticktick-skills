@@ -178,6 +178,39 @@ Domain errors use `TickTickDomainError` with categories:
 - `npm run typecheck` - strict type check
 - `npm test` - run unit tests
 - `npm run build` - compile TS to `dist/`
+- `npm run ticktick:cli -- <command>` - run helper CLI
+
+## Helper CLI (token.json 기반)
+
+토큰 파일 경로 기본값은 `~/.config/ticktick/token.json` 입니다.
+필요하면 `--tokenPath <path>`로 변경할 수 있습니다.
+
+```bash
+# 프로젝트 목록
+npm run ticktick:cli -- list-projects
+
+# 특정 프로젝트의 할 일 목록
+npm run ticktick:cli -- list-tasks --projectId <projectId> --limit 20
+
+# 할 일 생성
+npm run ticktick:cli -- create-task --projectId <projectId> --title "Write docs" --priority 3
+
+# 할 일 완료
+npm run ticktick:cli -- complete-task --taskId <taskId>
+```
+
+## OpenClaw Skill Wrapper
+
+`skill-entry/ticktick-skill.mjs` 를 통해 아래 액션을 OpenClaw 액션으로 매핑할 수 있습니다.
+
+- `create_task`
+- `list_tasks`
+- `update_task`
+- `complete_task`
+- `list_projects`
+
+기본 토큰 경로는 `~/.config/ticktick/token.json`이며,
+`TICKTICK_TOKEN_PATH` 또는 옵션 `tokenPath`로 오버라이드할 수 있습니다.
 
 ## Current Test Coverage
 
