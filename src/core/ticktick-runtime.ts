@@ -2,7 +2,7 @@ import { TickTickApiClient } from "../api/ticktick-api-client.js";
 import { createTickTickGateway, type TickTickGateway } from "../api/ticktick-gateway.js";
 import { TickTickOAuth2Client } from "../auth/ticktick-oauth2-client.js";
 import { parseTickTickEnv, parseTickTickEnvFromRuntime, type TickTickEnvSchema, type TickTickEnvSource } from "../config/ticktick-env.js";
-import { createTickTickUseCases, type TickTickApiClientLike } from "./ticktick-usecases.js";
+import { createTickTickUseCases } from "./ticktick-usecases.js";
 import type { TickTickUseCases } from "./usecase-contracts.js";
 
 export interface TickTickRuntimeConfig {
@@ -56,7 +56,7 @@ export function createTickTickRuntime(config: TickTickRuntimeConfig): TickTickRu
   });
 
   const gateway = createTickTickGateway(apiClient);
-  const useCases = createTickTickUseCases(apiClient as TickTickApiClientLike);
+  const useCases = createTickTickUseCases(gateway);
 
   return {
     oauth2Client,

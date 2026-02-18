@@ -1,17 +1,5 @@
+import { type TickTickListProjectsQuery } from "../domain/project-contract.js";
 import {
-  filterProjectsForQuery,
-  parseTickTickProjectList,
-  type TickTickListProjectsQuery,
-} from "../domain/project-contract.js";
-import {
-  parseListTasksQuery,
-  parseTickTickTask,
-  parseTickTickTaskList,
-  toCreateTaskPayload,
-  toUpdateTaskPayload,
-  validateCompleteTaskInput,
-  validateCreateTaskInput,
-  validateUpdateTaskInput,
   type TickTickCompleteTaskInput,
   type TickTickCreateTaskInput,
   type TickTickListTasksQuery,
@@ -22,24 +10,16 @@ import { categorizeHttpStatus, isRetriableCategory, TickTickDomainError } from "
 import {
   TickTickApiError,
   TickTickApiTimeoutError,
-  type TickTickApiRequestOptions,
 } from "../api/ticktick-api-client.js";
 import type { TickTickUseCases } from "./usecase-contracts.js";
+import type { TickTickGateway } from "../api/ticktick-gateway.js";
 
-export interface TickTickApiClientLike {
-  get(path: string, options?: TickTickApiRequestOptions): Promise<unknown>;
-  post(path: string, body?: unknown, options?: TickTickApiRequestOptions): Promise<unknown>;
-}
-
-export function createTickTickUseCases(client: TickTickApiClientLike): TickTickUseCases {
+export function createTickTickUseCases(gateway: TickTickGateway): TickTickUseCases {
   return {
     createTask: {
       execute: async (input: TickTickCreateTaskInput): Promise<TickTickTask> => {
         try {
-          const validated = validateCreateTaskInput(input);
-          const payload = toCreateTaskPayload(validated);
-          const response = await client.post("/task", payload);
-          return parseTickTickTask(response);
+          return await gateway.createTask(input);
         } catch (error) {
           throw mapCoreError(error, "Failed to create TickTick task.");
         }
@@ -48,10 +28,7 @@ export function createTickTickUseCases(client: TickTickApiClientLike): TickTickU
     listTasks: {
       execute: async (query?: TickTickListTasksQuery): Promise<TickTickTask[]> => {
         try {
-          const validated = query === undefined ? undefined : parseListTasksQuery(query);
-          const requestOptions = toTaskListRequestOptions(validated);
-          const response = await client.get("/task", requestOptions);
-          return parseTickTickTaskList(response);
+          return await gateway.listTasks(query);
         } catch (error) {
           throw mapCoreError(error, "Failed to list TickTick tasks.");
         }
@@ -60,10 +37,7 @@ export function createTickTickUseCases(client: TickTickApiClientLike): TickTickU
     updateTask: {
       execute: async (input: TickTickUpdateTaskInput): Promise<TickTickTask> => {
         try {
-          const validated = validateUpdateTaskInput(input);
-          const payload = toUpdateTaskPayload(validated);
-          const response = await client.post(`/task/${validated.taskId}`, payload);
-          return parseTickTickTask(response);
+          return await gateway.updateTask(input);
         } catch (error) {
           throw mapCoreError(error, `Failed to update TickTick task '${input.taskId}'.`);
         }
@@ -72,12 +46,7 @@ export function createTickTickUseCases(client: TickTickApiClientLike): TickTickU
     completeTask: {
       execute: async (input: TickTickCompleteTaskInput): Promise<TickTickTask> => {
         try {
-          const validated = validateCompleteTaskInput(input);
-          const response = await client.post(
-            `/task/${validated.taskId}/complete`,
-            toCompleteTaskPayload(validated)
-          );
-          return parseTickTickTask(response);
+          return await gateway.completeTask(input);
         } catch (error) {
           throw mapCoreError(error, `Failed to complete TickTick task '${input.taskId}'.`);
         }
@@ -86,9 +55,7 @@ export function createTickTickUseCases(client: TickTickApiClientLike): TickTickU
     listProjects: {
       execute: async (query?: TickTickListProjectsQuery) => {
         try {
-          const response = await client.get("/project");
-          const projects = parseTickTickProjectList(response);
-          return filterProjectsForQuery(projects, query);
+          return await gateway.listProjects(query);
         } catch (error) {
           throw mapCoreError(error, "Failed to list TickTick projects.");
         }

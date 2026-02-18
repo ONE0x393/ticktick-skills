@@ -130,12 +130,22 @@ export class TickTickApiGateway implements TickTickGateway {
       return [];
     }
 
-    const taskGroups = await Promise.all(
-      projects.map(async (project) => this.fetchTasksByProjectId(project.id))
-    );
+    const allTasks: TickTickTask[] = [];
+    for (const project of projects) {
+      try {
+        const tasks = await this.fetchTasksByProjectId(project.id);
+        allTasks.push(...tasks);
+        // Small delay to respect TickTick API rate limits for sequential project fetches
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      } catch (error: unknown) {
+        // Log individual project failures gracefully during aggregate fetch
+        console.error(
+          `[ticktick-gateway] Warning: Failed to fetch tasks for project ${project.id} (${project.name}). Skipping.`
+        );
+      }
+    }
 
-    const flattened = taskGroups.flat();
-    return dedupeTasks(flattened);
+    return dedupeTasks(allTasks);
   }
 
   private async fetchTasksByProjectId(projectId: string): Promise<TickTickTask[]> {
