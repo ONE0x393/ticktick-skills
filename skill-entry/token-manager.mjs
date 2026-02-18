@@ -4,8 +4,10 @@ import path from "node:path";
 import { buildAuthorizationUrl, TickTickOAuth2Client } from "../dist/src/index.js";
 
 const REFRESH_BUFFER_SECONDS = 120;
+const DEFAULT_NOTIFY_COOLDOWN_MS = 30 * 60 * 1000;
 
 export const DEFAULT_TOKEN_PATH = path.join(os.homedir(), ".config", "ticktick", "token.json");
+export const DEFAULT_NOTIFY_STATE_PATH = path.join(os.homedir(), ".config", "ticktick", "reauth-notify-state.json");
 
 export class ReauthRequiredError extends Error {
   constructor(message, authUrl, state) {
@@ -87,20 +89,101 @@ function isTokenUsable(tokenRecord, now = new Date()) {
   return expiresAtMs - now.getTime() > REFRESH_BUFFER_SECONDS * 1000;
 }
 
-export async function getAccessTokenWithAutoReauth({ tokenPath = DEFAULT_TOKEN_PATH, env }) {
+async function shouldNotifyNow({ statePath = DEFAULT_NOTIFY_STATE_PATH, cooldownMs = DEFAULT_NOTIFY_COOLDOWN_MS }) {
+  try {
+    const raw = await fs.readFile(statePath, "utf8");
+    const parsed = JSON.parse(raw);
+    const lastNotifiedAtMs = Number(parsed?.lastNotifiedAtMs);
+    if (Number.isFinite(lastNotifiedAtMs) && Date.now() - lastNotifiedAtMs < cooldownMs) {
+      return false;
+    }
+  } catch {
+    // ignore if file missing/corrupt
+  }
+
+  const dir = path.dirname(statePath);
+  await fs.mkdir(dir, { recursive: true });
+  await fs.writeFile(statePath, JSON.stringify({ lastNotifiedAtMs: Date.now() }, null, 2), "utf8");
+
+  return true;
+}
+
+export function createWebhookReauthNotifierFromEnv(options = {}) {
+  const webhookUrl = options.webhookUrl ?? process.env.TICKTICK_REAUTH_WEBHOOK_URL;
+  if (!webhookUrl || webhookUrl.trim().length === 0) {
+    return undefined;
+  }
+
+  const statePath =
+    options.statePath ?? process.env.TICKTICK_REAUTH_NOTIFY_STATE_PATH ?? DEFAULT_NOTIFY_STATE_PATH;
+  const cooldownMsRaw = options.cooldownMs ?? process.env.TICKTICK_REAUTH_NOTIFY_COOLDOWN_MS;
+  const cooldownMs = Number.isFinite(Number(cooldownMsRaw))
+    ? Math.max(0, Number(cooldownMsRaw))
+    : DEFAULT_NOTIFY_COOLDOWN_MS;
+
+  return async (payload) => {
+    const allowed = await shouldNotifyNow({ statePath, cooldownMs });
+    if (!allowed) return;
+
+    const body = {
+      type: "ticktick.reauth_required",
+      occurredAtUtc: new Date().toISOString(),
+      ...payload,
+    };
+
+    const response = await fetch(webhookUrl, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Reauth webhook failed (${response.status})`);
+    }
+  };
+}
+
+async function emitReauthNotification({ onReauthRequired, reason, error, tokenPath }) {
+  if (typeof onReauthRequired !== "function") return;
+
+  const payload = {
+    reason,
+    message: error.message,
+    authUrl: error.authUrl,
+    state: error.state,
+    tokenPath,
+  };
+
+  try {
+    await onReauthRequired(payload);
+  } catch {
+    // notification failures should not block auth flow
+  }
+}
+
+export async function getAccessTokenWithAutoReauth({ tokenPath = DEFAULT_TOKEN_PATH, env, onReauthRequired }) {
   const oauthClient = createOAuthClientFromEnv(env);
   let tokenRecord;
 
   try {
     tokenRecord = await readTokenFile(tokenPath);
-  } catch (error) {
+  } catch {
     const state = createOAuthState();
     const authUrl = buildTickTickAuthUrl(env, state);
-    throw new ReauthRequiredError(
+    const reauthError = new ReauthRequiredError(
       `Token file not found: ${tokenPath}. Complete OAuth authorization first.`,
       authUrl,
       state
     );
+    await emitReauthNotification({
+      onReauthRequired,
+      reason: "token_file_missing",
+      error: reauthError,
+      tokenPath,
+    });
+    throw reauthError;
   }
 
   if (isTokenUsable(tokenRecord)) {
@@ -125,11 +208,20 @@ export async function getAccessTokenWithAutoReauth({ tokenPath = DEFAULT_TOKEN_P
 
   const state = createOAuthState();
   const authUrl = buildTickTickAuthUrl(env, state);
-  throw new ReauthRequiredError(
+  const reauthError = new ReauthRequiredError(
     "Access token expired and refresh token is unavailable (or refresh failed). Reauthorization required.",
     authUrl,
     state
   );
+
+  await emitReauthNotification({
+    onReauthRequired,
+    reason: "expired_or_refresh_failed",
+    error: reauthError,
+    tokenPath,
+  });
+
+  throw reauthError;
 }
 
 export function parseCallbackUrl(callbackUrl) {

@@ -41,6 +41,11 @@ For OpenClaw wrapper/CLI, auto reauth helpers are in:
 - `skill-entry/ticktick-skill.mjs`
 - `scripts/ticktick-cli.mjs`
 
+Optional webhook notification env vars:
+- `TICKTICK_REAUTH_WEBHOOK_URL`
+- `TICKTICK_REAUTH_NOTIFY_COOLDOWN_MS`
+- `TICKTICK_REAUTH_NOTIFY_STATE_PATH`
+
 ## References
 
 - `README.md`

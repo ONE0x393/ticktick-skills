@@ -219,6 +219,30 @@ npm run ticktick:cli -- complete-task --taskId <taskId>
 - `refreshToken`이 있으면 만료 시 자동 갱신 후 파일 저장
 - refresh 불가/실패 시, 자동으로 재인증 URL을 안내
 
+### 자동 사용자 알림 훅 (Webhook)
+
+재인증이 필요한 순간 자동으로 웹훅 POST를 보낼 수 있습니다.
+
+```env
+TICKTICK_REAUTH_WEBHOOK_URL=https://your-webhook.example/path
+TICKTICK_REAUTH_NOTIFY_COOLDOWN_MS=1800000
+TICKTICK_REAUTH_NOTIFY_STATE_PATH=~/.config/ticktick/reauth-notify-state.json
+```
+
+웹훅 페이로드 예시:
+
+```json
+{
+  "type": "ticktick.reauth_required",
+  "occurredAtUtc": "2026-02-18T08:20:00.000Z",
+  "reason": "expired_or_refresh_failed",
+  "message": "Access token expired and refresh token is unavailable (or refresh failed). Reauthorization required.",
+  "authUrl": "https://ticktick.com/oauth/authorize?...",
+  "state": "oc_xxxxx",
+  "tokenPath": "/home/ubuntu/.config/ticktick/token.json"
+}
+```
+
 ## OpenClaw Skill Wrapper
 
 `skill-entry/ticktick-skill.mjs` 를 통해 아래 액션을 OpenClaw 액션으로 매핑할 수 있습니다.

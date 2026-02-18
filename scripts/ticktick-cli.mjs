@@ -8,6 +8,7 @@ import {
   ReauthRequiredError,
   buildTickTickAuthUrl,
   createOAuthState,
+  createWebhookReauthNotifierFromEnv,
   exchangeCodeAndPersistToken,
   getAccessTokenWithAutoReauth,
   parseCallbackUrl,
@@ -146,6 +147,7 @@ async function main() {
   await loadDotEnv(envPath);
 
   const env = parseTickTickEnvFromRuntime();
+  const onReauthRequired = createWebhookReauthNotifierFromEnv();
 
   if (parsed.command === "auth-url") {
     const state = readFlag(parsed, "state") ?? createOAuthState();
@@ -203,6 +205,7 @@ async function main() {
       getAccessTokenWithAutoReauth({
         tokenPath,
         env,
+        onReauthRequired,
       }),
   });
 
