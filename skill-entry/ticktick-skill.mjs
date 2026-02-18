@@ -1,21 +1,9 @@
-import fs from "node:fs/promises";
-import os from "node:os";
-import path from "node:path";
 import { createTickTickRuntime, parseTickTickEnvFromRuntime } from "../dist/src/index.js";
-
-const DEFAULT_TOKEN_PATH = path.join(os.homedir(), ".config", "ticktick", "token.json");
-
-async function readAccessTokenFromFile(tokenPath) {
-  const raw = await fs.readFile(tokenPath, "utf8");
-  const parsed = JSON.parse(raw);
-  const token = parsed?.accessToken;
-
-  if (typeof token !== "string" || token.trim().length === 0) {
-    throw new Error(`Token file '${tokenPath}' does not contain a valid accessToken`);
-  }
-
-  return token;
-}
+import {
+  DEFAULT_TOKEN_PATH,
+  ReauthRequiredError,
+  getAccessTokenWithAutoReauth,
+} from "./token-manager.mjs";
 
 /**
  * Build OpenClaw-ready TickTick skill actions.
@@ -28,38 +16,38 @@ async function readAccessTokenFromFile(tokenPath) {
 export function createTickTickOpenClawSkill(options = {}) {
   const tokenPath = options.tokenPath ?? process.env.TICKTICK_TOKEN_PATH ?? DEFAULT_TOKEN_PATH;
 
+  const env = options.env ?? parseTickTickEnvFromRuntime();
+
   const getAccessToken =
     options.getAccessToken ??
     (async () => {
-      return readAccessTokenFromFile(tokenPath);
+      return getAccessTokenWithAutoReauth({ tokenPath, env });
     });
 
-  const env = options.env ?? parseTickTickEnvFromRuntime();
   const runtime = createTickTickRuntime({ env, getAccessToken });
+
+  const withReauthHint = (fn) => async (input) => {
+    try {
+      return await fn(input);
+    } catch (error) {
+      if (error instanceof ReauthRequiredError) {
+        throw new Error(
+          `${error.message}\nReauthorize URL: ${error.authUrl}\nThen run auth-exchange and retry.`
+        );
+      }
+      throw error;
+    }
+  };
 
   return {
     name: "ticktick",
     description: "TickTick task/project integration skill",
     actions: {
-      async create_task(input) {
-        return runtime.useCases.createTask.execute(input);
-      },
-
-      async list_tasks(input) {
-        return runtime.useCases.listTasks.execute(input);
-      },
-
-      async update_task(input) {
-        return runtime.useCases.updateTask.execute(input);
-      },
-
-      async complete_task(input) {
-        return runtime.useCases.completeTask.execute(input);
-      },
-
-      async list_projects(input) {
-        return runtime.useCases.listProjects.execute(input);
-      },
+      create_task: withReauthHint((input) => runtime.useCases.createTask.execute(input)),
+      list_tasks: withReauthHint((input) => runtime.useCases.listTasks.execute(input)),
+      update_task: withReauthHint((input) => runtime.useCases.updateTask.execute(input)),
+      complete_task: withReauthHint((input) => runtime.useCases.completeTask.execute(input)),
+      list_projects: withReauthHint((input) => runtime.useCases.listProjects.execute(input)),
     },
   };
 }

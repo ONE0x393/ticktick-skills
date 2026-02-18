@@ -1,12 +1,19 @@
 #!/usr/bin/env node
 import fs from "node:fs/promises";
-import os from "node:os";
 import path from "node:path";
 import process from "node:process";
 import { createTickTickRuntime, parseTickTickEnvFromRuntime } from "../dist/src/index.js";
+import {
+  DEFAULT_TOKEN_PATH,
+  ReauthRequiredError,
+  buildTickTickAuthUrl,
+  createOAuthState,
+  exchangeCodeAndPersistToken,
+  getAccessTokenWithAutoReauth,
+  parseCallbackUrl,
+} from "../skill-entry/token-manager.mjs";
 
 const DEFAULT_ENV_PATH = path.resolve(process.cwd(), ".env");
-const DEFAULT_TOKEN_PATH = path.join(os.homedir(), ".config", "ticktick", "token.json");
 
 function printUsage() {
   console.log(`TickTick CLI
@@ -15,6 +22,8 @@ Usage:
   ticktick-cli <command> [options]
 
 Commands:
+  auth-url [--state <value>]
+  auth-exchange (--callbackUrl <url> | --code <code>)
   list-projects [--includeClosed]
   list-tasks [--projectId <id>] [--from <iso>] [--to <iso>] [--includeCompleted] [--limit <n>]
   create-task --projectId <id> --title <text> [--content <text>] [--description <text>] [--startDate <iso>] [--dueDate <iso>] [--isAllDay] [--priority <0|1|3|5>] [--tags a,b,c]
@@ -123,18 +132,6 @@ async function loadDotEnv(filePath) {
   }
 }
 
-async function readAccessToken(tokenPath) {
-  const raw = await fs.readFile(tokenPath, "utf8");
-  const parsed = JSON.parse(raw);
-  const token = parsed?.accessToken;
-
-  if (typeof token !== "string" || token.trim().length === 0) {
-    throw new Error(`Token file '${tokenPath}' does not contain a valid accessToken`);
-  }
-
-  return token;
-}
-
 async function main() {
   const parsed = parseArgv(process.argv);
 
@@ -149,9 +146,64 @@ async function main() {
   await loadDotEnv(envPath);
 
   const env = parseTickTickEnvFromRuntime();
+
+  if (parsed.command === "auth-url") {
+    const state = readFlag(parsed, "state") ?? createOAuthState();
+    const authUrl = buildTickTickAuthUrl(env, state);
+    console.log(JSON.stringify({ state, authUrl, redirectUri: env.redirectUri }, null, 2));
+    return;
+  }
+
+  if (parsed.command === "auth-exchange") {
+    const callbackUrl = readFlag(parsed, "callbackUrl");
+    const codeFromFlag = readFlag(parsed, "code");
+
+    let code = codeFromFlag;
+    let state;
+
+    if (callbackUrl) {
+      const parsedCallback = parseCallbackUrl(callbackUrl);
+      if (parsedCallback.error) {
+        throw new Error(
+          `OAuth callback returned error='${parsedCallback.error}'${
+            parsedCallback.errorDescription ? ` description='${parsedCallback.errorDescription}'` : ""
+          }`
+        );
+      }
+      code = parsedCallback.code;
+      state = parsedCallback.state;
+    }
+
+    if (!code) {
+      throw new Error("auth-exchange requires --callbackUrl <url> or --code <code>");
+    }
+
+    const token = await exchangeCodeAndPersistToken({ code, tokenPath, env });
+    console.log(
+      JSON.stringify(
+        {
+          ok: true,
+          tokenPath,
+          state,
+          tokenType: token.tokenType,
+          scope: token.scope,
+          expiresIn: token.expiresIn,
+          hasRefreshToken: typeof token.refreshToken === "string" && token.refreshToken.length > 0,
+        },
+        null,
+        2
+      )
+    );
+    return;
+  }
+
   const runtime = createTickTickRuntime({
     env,
-    getAccessToken: async () => readAccessToken(tokenPath),
+    getAccessToken: async () =>
+      getAccessTokenWithAutoReauth({
+        tokenPath,
+        env,
+      }),
   });
 
   let result;
@@ -238,6 +290,14 @@ async function main() {
 }
 
 main().catch((error) => {
+  if (error instanceof ReauthRequiredError) {
+    console.error("[ticktick-cli]", error.message);
+    console.error("[ticktick-cli] Reauthorize URL:", error.authUrl);
+    console.error("[ticktick-cli] After approval, run:");
+    console.error("[ticktick-cli] npm run ticktick:cli -- auth-exchange --callbackUrl '<callback-url>'");
+    process.exit(2);
+  }
+
   console.error("[ticktick-cli]", error instanceof Error ? error.message : error);
   process.exit(1);
 });

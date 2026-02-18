@@ -33,8 +33,13 @@ Optional defaults are documented in `README.md`.
 1. Load env (`parseTickTickEnvFromRuntime`)
 2. Build auth URL
 3. Exchange auth code for token
-4. Refresh token as needed
+4. Refresh token as needed (or reauthorize when refresh unavailable)
 5. Execute usecases via `createTickTickRuntime`
+
+For OpenClaw wrapper/CLI, auto reauth helpers are in:
+- `skill-entry/token-manager.mjs`
+- `skill-entry/ticktick-skill.mjs`
+- `scripts/ticktick-cli.mjs`
 
 ## References
 

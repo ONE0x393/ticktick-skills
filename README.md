@@ -185,6 +185,20 @@ Domain errors use `TickTickDomainError` with categories:
 토큰 파일 경로 기본값은 `~/.config/ticktick/token.json` 입니다.
 필요하면 `--tokenPath <path>`로 변경할 수 있습니다.
 
+### 1) 인증 URL 만들기
+
+```bash
+npm run ticktick:cli -- auth-url
+```
+
+### 2) 승인 후 callback URL로 토큰 저장
+
+```bash
+npm run ticktick:cli -- auth-exchange --callbackUrl "http://localhost:3000/oauth/callback?code=...&state=..."
+```
+
+### 3) 작업 명령 실행
+
 ```bash
 # 프로젝트 목록
 npm run ticktick:cli -- list-projects
@@ -198,6 +212,12 @@ npm run ticktick:cli -- create-task --projectId <projectId> --title "Write docs"
 # 할 일 완료
 npm run ticktick:cli -- complete-task --taskId <taskId>
 ```
+
+### 자동 재인증/토큰 갱신
+
+- 토큰이 유효하면 그대로 사용
+- `refreshToken`이 있으면 만료 시 자동 갱신 후 파일 저장
+- refresh 불가/실패 시, 자동으로 재인증 URL을 안내
 
 ## OpenClaw Skill Wrapper
 
