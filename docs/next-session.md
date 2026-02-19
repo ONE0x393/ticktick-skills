@@ -17,7 +17,9 @@
 - 완료: Auth/API/Core 테스트 본문 반영(`tests/unit/auth.unit.test.ts`, `tests/unit/api.unit.test.ts`, `tests/unit/core.unit.test.ts`) 및 `npm run typecheck`/`npm test` 통과
 - 완료: 루트 `README.md` step-by-step 시작 가이드 작성
 - 완료: 루트 `SKILL.md`를 레퍼런스 기반 표준 구조(Quick Reference/Setup/Workflow/Gates)로 정규화
-- 미완료: 실 API sandbox 검증/샘플 응답 캡처, 통합 에러 매핑 테스트 추가
+- 완료: `ticktick:smoke` CLI 회귀 보호 테스트 추가(`tests/unit/ticktick-smoke.unit.test.ts`) (`--help`, `--dryRun` 시나리오)
+- 완료: 통합 에러 매핑 테스트 추가(`tests/unit/integration-error-mapping.unit.test.ts`) (429/timeout/unknown 경로)
+- 미완료: 실 API sandbox 검증/샘플 응답 캡처
 - 진행 중: `ticktick:smoke` 실 실행에서 토큰 부재 시 종료코드/메시지 정책 정합 확인
 
 ## 3) 의존성/핸드오프 포인트
@@ -27,12 +29,12 @@
 
 ## 4) 다음 세션 즉시 실행 3개 작업
 1. 실제 TickTick sandbox 계정으로 `ticktick:smoke` 실 실행 후 `/task`, `/project` 응답 alias 샘플 캡처
-2. 401/403/404/429/5xx + timeout/network를 usecase/gateway 경로에서 검증하는 통합 테스트 파일(`tests/unit/integration-error-mapping.unit.test.ts` 등) 추가
+2. 통합 에러 매핑 테스트를 401/403/404/5xx까지 확장하고 케이스별 retriable/status assertion 보강
 3. 배포/운영 전 정리: `README.md`, `SKILL.md`에 smoke dry-run 가드/리턴코드 정책 및 토큰 부재 안내 동기화
 
 ## 5) 이번 세션 종료 전 업데이트 체크리스트
-- [ ] `docs/progress-log.md`에 Entry Template 기준으로 append(`What changed`, `Evidence`, `Risks/Blockers`, `Next actions`)
-- [ ] `docs/current-status.md`의 `## 이번 세션 변경점(YYYY-MM-DD)`과 `- 검증 상태:` 갱신
-- [ ] `## 2) 현재 구현 상태 요약`의 `완료/미완료` 재분류
-- [ ] `## 4) 다음 세션 즉시 실행 3개 작업`을 잔여 작업 기준으로 재작성(파일 경로 + 검증 기준 포함)
-- [ ] 미해결 이슈를 `## 3) 의존성/핸드오프 포인트`에 반영
+- [x] `docs/progress-log.md`에 Entry Template 기준으로 append(`What changed`, `Evidence`, `Risks/Blockers`, `Next actions`)
+- [x] `docs/current-status.md`의 `## 이번 세션 변경점(YYYY-MM-DD)`과 `- 검증 상태:` 갱신
+- [x] `## 2) 현재 구현 상태 요약`의 `완료/미완료` 재분류
+- [x] `## 4) 다음 세션 즉시 실행 3개 작업`을 잔여 작업 기준으로 재작성(파일 경로 + 검증 기준 포함)
+- [x] 미해결 이슈를 `## 3) 의존성/핸드오프 포인트`에 반영
