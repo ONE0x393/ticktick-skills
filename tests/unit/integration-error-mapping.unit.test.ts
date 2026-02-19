@@ -213,6 +213,46 @@ describe("integration error mapping (usecases <- gateway/api)", () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
+  it("does not retry non-retriable 4xx at api client layer via gateway->usecase path", async () => {
+    const fetchMock = vi
+      .fn<
+        (url: string, init: { headers: Record<string, string> }) => Promise<MockResponse>
+      >()
+      .mockResolvedValueOnce(
+        createMockResponse({
+          ok: false,
+          status: 404,
+          statusText: "Not Found",
+          body: { message: "project missing" },
+        })
+      )
+      .mockResolvedValueOnce(
+        createMockResponse({
+          ok: true,
+          status: 200,
+          body: [{ id: "proj-should-not-be-used", name: "Should Not Retry", closed: false }],
+        })
+      );
+
+    const apiClient = new TickTickApiClient({
+      baseUrl: "https://api.ticktick.com/open/v1",
+      getAccessToken: () => "token-123",
+      fetchImplementation: fetchMock,
+      maxRetries: 2,
+      retryBaseDelayMs: 1,
+      timeoutMs: 500,
+    });
+    const gateway = createTickTickGateway(apiClient);
+    const useCases = createTickTickUseCases(gateway);
+
+    await expect(useCases.listProjects.execute()).rejects.toMatchObject({
+      category: "not_found_404",
+      retriable: false,
+      status: 404,
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it("maps timeout errors to retriable network domain error", async () => {
     const gateway = {
       createTask: vi.fn(async () => {

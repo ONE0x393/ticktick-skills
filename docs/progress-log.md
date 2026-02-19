@@ -417,3 +417,44 @@ Next actions:
 1. 실 TickTick 토큰 환경에서 `ticktick:smoke` live 실행 및 응답 샘플 저장
 2. 비재시도 4xx에서 재호출 미발생 assertion 보강
 3. 운영 문서(README/SKILL)에 live 검증 결과 반영
+
+## 2026-02-19 23:36 (KST)
+Session Goal:
+- non-retriable 4xx에서 재시도가 발생하지 않음을 통합 테스트로 검증
+
+분석:
+- 이전 런에서 retryable 5xx 회복 테스트는 추가됐지만, 반대로 비재시도 4xx 무재시도 보장은 명시적으로 검증되지 않았음
+- 다음 세션 액션에 해당 보강이 남아 있었음
+
+목표:
+- usecase -> gateway -> apiClient 경로에서 404 발생 시 재시도가 일어나지 않음을 자동 검증
+- 문서 상태를 최신 테스트 범위와 동기화
+
+결과:
+- `tests/unit/integration-error-mapping.unit.test.ts` 확장
+  - mock fetch 1회차 404, 2회차 성공 응답을 준비한 뒤 실제 호출은 1회만 발생함을 assertion
+  - 결과적으로 `not_found_404` + non-retriable 매핑 및 no-retry 정책 동시 검증
+  - 기존 5xx 복구/네트워크 예외/상태코드 매핑 시나리오 유지
+- 문서 동기화: `docs/current-status.md`, `docs/next-session.md`, `docs/progress-log.md`
+
+달성:
+- `npm run typecheck`, `npm test` 모두 PASS (5 files, 25 tests)
+- 통합 경계 테스트가 retry와 no-retry 정책을 모두 검증하도록 강화됨
+
+What changed:
+- `tests/unit/integration-error-mapping.unit.test.ts`
+- `docs/current-status.md`
+- `docs/next-session.md`
+- `docs/progress-log.md`
+
+Evidence:
+- files: `tests/unit/integration-error-mapping.unit.test.ts`, `docs/current-status.md`, `docs/next-session.md`, `docs/progress-log.md`
+- checks: `npm run typecheck`, `npm test`
+
+Risks/Blockers:
+- 실 API sandbox 기반 live smoke 실행/응답 샘플 캡처는 여전히 미완료
+
+Next actions:
+1. 실 TickTick 토큰 환경에서 `ticktick:smoke` live 실행 및 응답 샘플 저장
+2. 401/403의 빈 바디/텍스트 바디 에러 응답 매핑 케이스 테스트 보강
+3. 운영 문서(README/SKILL)에 live 검증 결과 반영
