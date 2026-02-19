@@ -64,7 +64,10 @@
 - `scripts/ticktick-smoke.mjs` 추가: `--dryRun`에서 필수 env 미설정 시 하드 실패 없이 설정점검 메시지 출력 후 종료 코드 0 보장
 - `package.json`에 `ticktick:smoke` 스크립트 등록
 - GitHub Issue #1(`Smoke test dry-run should not hard-fail when env vars are missing`) 대응 완료
+- `tests/unit/ticktick-smoke.unit.test.ts` 추가: `--help`, `--dryRun` 핵심 동작을 자동 검증
+- 검증 상태: `npm run typecheck`, `npm test` 통과
 - 문서 동기화: `docs/current-status.md`, `docs/next-session.md`, `docs/progress-log.md` 갱신
+
 ## 이번 세션 증빙 체크리스트
 - [x] 구현/테스트 변경 요약 1-3줄 갱신(무엇/왜)
 - [x] 변경 파일 목록 반영(`src/...`, `tests/...`, `docs/...`)

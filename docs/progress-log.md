@@ -214,4 +214,40 @@ Next actions:
 2. 종료 코드 정책 정리 및 문서 반영
 3. Issue #1 클로즈 및 PR 작성
 
+## 2026-02-19 18:37 (KST)
+Session Goal:
+- TickTick smoke CLI의 회귀 방지 테스트를 추가하고 문서·로그를 최신화
 
+분석:
+- 기존에 smoke 스크립트는 동작 확인이 있었으나, CLI 헬프/`--dryRun` 동작은 단위 검증이 없어서 실수 가능성 존재
+- 실 API 없이도 검증 가능한 안정적 회귀 테스트가 필요
+
+목표:
+- `ticktick-smoke.mjs`의 핵심 사용자 동작(도움말/--dryRun 누락 env 경고)을 자동 테스트로 보강
+- 작업 로그를 4단계(분석/목표/결과/달성) 형식으로 증빙
+
+결과:
+- `tests/unit/ticktick-smoke.unit.test.ts` 신규 추가
+  - `--help` 호출 시 사용법 출력 확인
+  - 빈 `.env` 사용 `--dryRun`에서 필수 env 누락 메시지와 종료 코드 0 확인
+- 테스트 실행으로 CLI 동작을 비실환경에서도 검증 가능해짐
+
+달성:
+- `npm run typecheck`, `npm test` 모두 PASS
+- `ticktick:smoke` 스크립트의 실행 전 가드 동작 회귀 방지 기준 확보
+
+What changed:
+- `tests/unit/ticktick-smoke.unit.test.ts`
+- `docs/progress-log.md`
+
+Evidence:
+- files: `tests/unit/ticktick-smoke.unit.test.ts`, `docs/progress-log.md`
+- checks: `npm run typecheck`, `npm test`
+
+Risks/Blockers:
+- 실 TickTick 토큰 환경에서의 live smoke 실행 결과 검증은 별도 스텝으로 남음
+
+Next actions:
+1. 실 토큰 환경에서 `npm run ticktick:smoke -- --projectId <id>` smoke flow 실행
+2. live 실행 결과를 바탕으로 docs/openclaw-skill-guide.md의 스모크 절차 보강
+3. 필요 시 종료 코드 정책(특히 성공/실패 메시지)을 명시적으로 문서화
