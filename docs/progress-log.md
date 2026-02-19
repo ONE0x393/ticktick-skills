@@ -292,3 +292,46 @@ Next actions:
 1. 실 TickTick 토큰 환경에서 `ticktick:smoke` live 실행 및 결과 캡처
 2. 통합 에러 매핑 테스트를 401/403/404/5xx 케이스로 확장
 3. 운영 문서에 live 검증 결과 반영
+
+## 2026-02-19 20:37 (KST)
+Session Goal:
+- 통합 에러 매핑 커버리지를 4xx/5xx 축까지 확장해 usecase 경계 회귀 방지를 강화
+
+분석:
+- 이전 런에서 통합 테스트는 429/timeout/unknown 중심이었고, auth/not-found/server 계열 분류 검증이 부족했음
+- 다음 세션 액션 항목에 401/403/404/5xx 보강 필요가 명시되어 있었음
+
+목표:
+- usecase 경계에서 상태코드별 category/retriable/status/responseBody 매핑을 자동 검증
+- 문서 상태(현재/다음 세션 계획)를 최신 테스트 범위에 맞춰 갱신
+
+결과:
+- `tests/unit/integration-error-mapping.unit.test.ts` 확장
+  - 401 -> `auth_401`
+  - 403 -> `auth_403`
+  - 404 -> `not_found_404`
+  - 502 -> `server_5xx`
+  - 기존 429/timeout/unknown 시나리오 유지
+- 문서 동기화: `docs/current-status.md`, `docs/next-session.md`, `docs/progress-log.md`
+
+달성:
+- `npm run typecheck`, `npm test` 모두 PASS (5 files, 21 tests)
+- 상태코드 기반 분류 회귀 감시 범위를 auth/not-found/server까지 확대
+
+What changed:
+- `tests/unit/integration-error-mapping.unit.test.ts`
+- `docs/current-status.md`
+- `docs/next-session.md`
+- `docs/progress-log.md`
+
+Evidence:
+- files: `tests/unit/integration-error-mapping.unit.test.ts`, `docs/current-status.md`, `docs/next-session.md`, `docs/progress-log.md`
+- checks: `npm run typecheck`, `npm test`
+
+Risks/Blockers:
+- 실 API 응답 샘플 캡처(필드 alias 및 complete endpoint 실응답)는 미완료
+
+Next actions:
+1. 실 TickTick 토큰 환경에서 `ticktick:smoke` live 실행 및 응답 샘플 저장
+2. 네트워크 예외(ECONNRESET/fetch reject) 통합 매핑 테스트 보강
+3. 운영 문서(README/SKILL)에 live 검증 결과 반영
