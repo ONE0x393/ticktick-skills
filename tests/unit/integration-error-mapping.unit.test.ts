@@ -1,7 +1,54 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { createTickTickUseCases } from "../../src/core/ticktick-usecases.js";
-import { TickTickApiError, TickTickApiTimeoutError } from "../../src/api/ticktick-api-client.js";
+import { createTickTickGateway } from "../../src/api/ticktick-gateway.js";
+import { TickTickApiClient, TickTickApiError, TickTickApiTimeoutError } from "../../src/api/ticktick-api-client.js";
+
+interface MockResponse {
+  ok: boolean;
+  status: number;
+  statusText: string;
+  headers: { get(name: string): string | null };
+  json: () => Promise<unknown>;
+  text: () => Promise<string>;
+}
+
+function createMockResponse(params: {
+  ok: boolean;
+  status: number;
+  statusText?: string;
+  body?: unknown;
+  contentType?: string;
+  retryAfter?: string;
+}): MockResponse {
+  const contentType = params.contentType ?? "application/json";
+  return {
+    ok: params.ok,
+    status: params.status,
+    statusText: params.statusText ?? "",
+    headers: {
+      get(name: string) {
+        const key = name.toLowerCase();
+        if (key === "content-type") {
+          return contentType;
+        }
+        if (key === "retry-after") {
+          return params.retryAfter ?? null;
+        }
+        return null;
+      },
+    },
+    async json() {
+      return params.body;
+    },
+    async text() {
+      if (typeof params.body === "string") {
+        return params.body;
+      }
+      return params.body === undefined ? "" : JSON.stringify(params.body);
+    },
+  };
+}
 
 describe("integration error mapping (usecases <- gateway/api)", () => {
   it("maps 401 api error to auth_401 domain error", async () => {
@@ -126,6 +173,44 @@ describe("integration error mapping (usecases <- gateway/api)", () => {
       status: 502,
       responseBody: { message: "upstream failed" },
     });
+  });
+
+  it("recovers after retryable 5xx at api client layer via gateway->usecase path", async () => {
+    const fetchMock = vi
+      .fn<
+        (url: string, init: { headers: Record<string, string> }) => Promise<MockResponse>
+      >()
+      .mockResolvedValueOnce(
+        createMockResponse({
+          ok: false,
+          status: 502,
+          statusText: "Bad Gateway",
+          body: { error: "upstream" },
+        })
+      )
+      .mockResolvedValueOnce(
+        createMockResponse({
+          ok: true,
+          status: 200,
+          body: [{ id: "proj-1", name: "Inbox", closed: false }],
+        })
+      );
+
+    const apiClient = new TickTickApiClient({
+      baseUrl: "https://api.ticktick.com/open/v1",
+      getAccessToken: () => "token-123",
+      fetchImplementation: fetchMock,
+      maxRetries: 2,
+      retryBaseDelayMs: 1,
+      timeoutMs: 500,
+    });
+    const gateway = createTickTickGateway(apiClient);
+    const useCases = createTickTickUseCases(gateway);
+
+    await expect(useCases.listProjects.execute()).resolves.toEqual([
+      { id: "proj-1", name: "Inbox", closed: false },
+    ]);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it("maps timeout errors to retriable network domain error", async () => {

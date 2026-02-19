@@ -18,7 +18,7 @@
 - 완료: 루트 `README.md` step-by-step 시작 가이드 작성
 - 완료: 루트 `SKILL.md`를 레퍼런스 기반 표준 구조(Quick Reference/Setup/Workflow/Gates)로 정규화
 - 완료: `ticktick:smoke` CLI 회귀 보호 테스트 추가(`tests/unit/ticktick-smoke.unit.test.ts`) (`--help`, `--dryRun` 시나리오)
-- 완료: 통합 에러 매핑 테스트 추가(`tests/unit/integration-error-mapping.unit.test.ts`) (401/403/404/429/5xx/timeout/ECONNRESET/fetch reject/unknown 경로)
+- 완료: 통합 에러 매핑 테스트 추가(`tests/unit/integration-error-mapping.unit.test.ts`) (401/403/404/429/5xx/timeout/ECONNRESET/fetch reject/unknown + retryable 5xx 복구 경로)
 - 미완료: 실 API sandbox 검증/샘플 응답 캡처
 - 진행 중: `ticktick:smoke` 실 실행에서 토큰 부재 시 종료코드/메시지 정책 정합 확인
 
@@ -29,7 +29,7 @@
 
 ## 4) 다음 세션 즉시 실행 3개 작업
 1. 실제 TickTick sandbox 계정으로 `ticktick:smoke` 실 실행 후 `/task`, `/project` 응답 alias 샘플 캡처
-2. 통합 에러 매핑 테스트에 gateway 레벨 재시도/회복 시나리오(첫 실패 후 성공) assertion 보강
+2. 통합 에러 매핑 테스트에 비재시도 4xx에서 재호출이 일어나지 않음을 보장하는 assertion 보강
 3. 배포/운영 전 정리: `README.md`, `SKILL.md`에 smoke dry-run 가드/리턴코드 정책 및 토큰 부재 안내 동기화
 
 ## 5) 이번 세션 종료 전 업데이트 체크리스트
