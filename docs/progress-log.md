@@ -152,3 +152,26 @@ Next actions:
 1. TickTick sandbox smoke script 추가 및 실제 응답 샘플 캡처
 2. 통합 에러 매핑 테스트 파일 추가(401/403/404/429/5xx + timeout/network)
 3. 운영 가이드(토큰 저장/회전 정책) README 보강
+
+## 2026-02-19 16:58 (KST)
+Session Goal:
+- 제공된 레퍼런스 URL의 `SKILL.md`를 기준으로 루트 `SKILL.md` 내용 정규화
+
+What changed:
+- MCP Playwright로 `https://clawhub.ai/pskoett/self-improving-agent` 페이지를 렌더링하고 원문 다운로드 링크를 확보
+- 다운로드 zip에서 원본 `SKILL.md`를 추출해 구조/섹션을 분석하고, TickTick 도메인에 맞춰 루트 `SKILL.md`를 전면 개편
+- `SKILL.md`를 Quick Reference, Capabilities, OpenClaw Setup, CLI/Programmatic Workflow, Error Mapping, Verification Gates, Troubleshooting 중심으로 정렬
+- 세션 연속성 유지를 위해 `docs/current-status.md`, `docs/next-session.md`, `docs/progress-log.md`를 최신 상태로 동기화
+
+Evidence:
+- files: `SKILL.md`, `docs/current-status.md`, `docs/next-session.md`, `docs/progress-log.md`
+- checks: `npm install` 실행(로컬 devDependencies 복원), `npm run typecheck` 통과, `npm test` 통과(3 files, 12 tests)
+- refs: `https://clawhub.ai/pskoett/self-improving-agent`, `/tmp/self-improving-agent/SKILL.md`
+
+Risks/Blockers:
+- 실 TickTick sandbox smoke 검증 및 통합 에러 매핑 테스트는 아직 미완료
+
+Next actions:
+1. TickTick sandbox 계정 기반 smoke 호출로 endpoint/payload alias 런타임 샘플 확정
+2. 401/403/404/429/5xx + timeout/network 통합 에러 매핑 테스트 추가
+3. 배포/운영 전 점검 스크립트와 문서(`README.md`, `SKILL.md`)의 운영 절차 동기화
