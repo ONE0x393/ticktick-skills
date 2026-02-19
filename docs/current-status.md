@@ -6,7 +6,7 @@
 - Agent Team 역할 분리 기반으로 구현 진행
 
 ## 현재 단계
-- 상태: Gate 3 진행 - OAuth 런타임 클라이언트 + Runtime Factory + Auth/API/Core 테스트 본문 반영 완료 + `SKILL.md` 정규화 완료
+- 상태: Gate 3 진행 - `ticktick:smoke` 진입점 추가 및 Dry-run 환경 점검 루틴 반영
 - 코드베이스: TypeScript strict + Vitest 기준으로 계약 + 실행(runtime/usecase/gateway) + 에러 매핑 검증까지 반영
 
 ## 구현된 스캐폴딩(2026-02-18)
@@ -60,11 +60,16 @@
 - 문서 내용은 현재 구현 파일(`skill-entry/*`, `scripts/ticktick-cli.mjs`, `src/core/*`, `src/api/*`)과 일치하도록 정렬
 - 검증 상태: `npm install`, `npm run typecheck`, `npm test` 통과
 
+## 이번 세션 변경점(2026-02-19 추가)
+- `scripts/ticktick-smoke.mjs` 추가: `--dryRun`에서 필수 env 미설정 시 하드 실패 없이 설정점검 메시지 출력 후 종료 코드 0 보장
+- `package.json`에 `ticktick:smoke` 스크립트 등록
+- GitHub Issue #1(`Smoke test dry-run should not hard-fail when env vars are missing`) 대응 완료
+- 문서 동기화: `docs/current-status.md`, `docs/next-session.md`, `docs/progress-log.md` 갱신
 ## 이번 세션 증빙 체크리스트
 - [x] 구현/테스트 변경 요약 1-3줄 갱신(무엇/왜)
 - [x] 변경 파일 목록 반영(`src/...`, `tests/...`, `docs/...`)
 - [x] 검증 명령과 결과 기록(`npm run typecheck`, `npm test`, 필요 시 추가 명령)
-- [ ] 변경 파일 LSP diagnostics 결과 기록(clean 또는 오류 파일 명시)
+- [x] 변경 파일 LSP diagnostics 결과 기록(clean 또는 오류 파일 명시)
 - [x] 미해결 이슈만 `## 오픈 리스크`에 반영
 - [x] `docs/progress-log.md`에 Evidence(`files`, `checks`) append
 

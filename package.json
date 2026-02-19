@@ -8,7 +8,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "ticktick:cli": "node ./scripts/ticktick-cli.mjs"
+    "ticktick:cli": "node ./scripts/ticktick-cli.mjs",
+    "ticktick:smoke": "node ./scripts/ticktick-smoke.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.13.10",

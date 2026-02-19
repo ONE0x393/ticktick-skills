@@ -175,3 +175,43 @@ Next actions:
 1. TickTick sandbox 계정 기반 smoke 호출로 endpoint/payload alias 런타임 샘플 확정
 2. 401/403/404/429/5xx + timeout/network 통합 에러 매핑 테스트 추가
 3. 배포/운영 전 점검 스크립트와 문서(`README.md`, `SKILL.md`)의 운영 절차 동기화
+## 2026-02-19 17:36 (KST)
+Session Goal:
+- 기존 저장소 연속성 문서를 반영해 `ticktick:smoke` 이슈를 수정하고 문서/테스트로 증빙
+
+분석:
+- README에는 `ticktick:smoke`가 문서상 존재하나 실제 구현 파일/스크립트가 없어 `--dryRun`이 필수 env 미존재 시 하드 실패할 수 있다는 점 확인
+- `gh issue`에서 #1이 동일한 고장 보고로 열려 있는 상태 확인
+
+목표:
+- `--dryRun`에서 필수 env 하드 실패를 제거하고 설정점검 메시지 후 코드 0으로 종료
+- smoke 진입점(`ticktick:smoke`)를 추가해 라이브 실행 시 create -> update -> complete 점검 흐름을 제공
+
+결과:
+- `scripts/ticktick-smoke.mjs` 신규 추가 및 `package.json`에 `ticktick:smoke` 스크립트 등록
+- docs(`docs/current-status.md`, `docs/next-session.md`)를 세션 상태 기준으로 동기화
+- `npm run ticktick:smoke -- --dryRun --env /tmp/does-not-exist.env` 실행 시 필수 env 미설정 안내 후 종료 코드 0 확인
+
+달성:
+- 검증 커맨드: `npm run typecheck`, `npm test`, `npm run ticktick:smoke -- --dryRun --env /tmp/does-not-exist.env` 모두 PASS
+- 실 API 토큰 미보유 상태에서는 reauth 안내 메시지 동작은 유지되어 운영 가시성 확보
+
+What changed:
+- `scripts/ticktick-smoke.mjs`
+- `package.json`
+- `docs/current-status.md`
+- `docs/next-session.md`
+
+Evidence:
+- files: `scripts/ticktick-smoke.mjs`, `package.json`, `docs/current-status.md`, `docs/next-session.md`, `docs/progress-log.md`
+- checks: `npm run typecheck`, `npm test`, `npm run ticktick:smoke -- --dryRun --env /tmp/does-not-exist.env`
+
+Risks/Blockers:
+- 실 API 토큰 보유 환경에서 `ticktick:smoke`의 종료 코드/메시지 정책을 추가 정합 필요
+
+Next actions:
+1. `ticktick:smoke` 실 API 런 검증(샘플 토큰 기반)
+2. 종료 코드 정책 정리 및 문서 반영
+3. Issue #1 클로즈 및 PR 작성
+
+
