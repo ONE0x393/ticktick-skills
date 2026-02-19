@@ -458,3 +458,44 @@ Next actions:
 1. 실 TickTick 토큰 환경에서 `ticktick:smoke` live 실행 및 응답 샘플 저장
 2. 401/403의 빈 바디/텍스트 바디 에러 응답 매핑 케이스 테스트 보강
 3. 운영 문서(README/SKILL)에 live 검증 결과 반영
+
+## 2026-02-20 00:37 (KST)
+Session Goal:
+- 401/403 에러 응답 바디 변형(text/empty) 케이스를 통합 에러 매핑 테스트에 반영
+
+분석:
+- 이전까지 401/403은 JSON body 중심 검증이었고, text/plain 또는 빈 바디 같은 변형 케이스에 대한 경계 검증이 부족했음
+- 다음 세션 액션에 body variant 보강 필요가 남아 있었음
+
+목표:
+- usecase -> gateway -> apiClient 경로에서 401(text), 403(empty body) 변형 응답도 auth 카테고리로 일관 매핑되는지 검증
+- 문서 상태를 최신 테스트 범위에 맞춰 동기화
+
+결과:
+- `tests/unit/integration-error-mapping.unit.test.ts` 확장
+  - 401 text/plain 응답 -> `auth_401`, `responseBody` 문자열 매핑 검증
+  - 403 empty-body 응답 -> `auth_403`, `responseBody: undefined` 매핑 검증
+  - 기존 retry/no-retry 및 네트워크/상태코드 매핑 시나리오 유지
+- 문서 동기화: `docs/current-status.md`, `docs/next-session.md`, `docs/progress-log.md`
+
+달성:
+- `npm run typecheck`, `npm test` 모두 PASS (5 files, 27 tests)
+- auth 계열 에러 매핑 테스트가 body 포맷 변형까지 커버하도록 강화
+
+What changed:
+- `tests/unit/integration-error-mapping.unit.test.ts`
+- `docs/current-status.md`
+- `docs/next-session.md`
+- `docs/progress-log.md`
+
+Evidence:
+- files: `tests/unit/integration-error-mapping.unit.test.ts`, `docs/current-status.md`, `docs/next-session.md`, `docs/progress-log.md`
+- checks: `npm run typecheck`, `npm test`
+
+Risks/Blockers:
+- 실 API sandbox 기반 live smoke 실행/응답 샘플 캡처는 여전히 미완료
+
+Next actions:
+1. 실 TickTick 토큰 환경에서 `ticktick:smoke` live 실행 및 응답 샘플 저장
+2. 429/5xx `retry-after` 헤더 기반 backoff 경로 assertion 보강
+3. 운영 문서(README/SKILL)에 live 검증 결과 반영

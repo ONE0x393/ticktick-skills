@@ -73,6 +73,41 @@ describe("integration error mapping (usecases <- gateway/api)", () => {
     });
   });
 
+  it("maps 401 text/plain body variant to auth_401 via gateway->usecase path", async () => {
+    const fetchMock = vi
+      .fn<
+        (url: string, init: { headers: Record<string, string> }) => Promise<MockResponse>
+      >()
+      .mockResolvedValueOnce(
+        createMockResponse({
+          ok: false,
+          status: 401,
+          statusText: "Unauthorized",
+          body: "invalid bearer token",
+          contentType: "text/plain",
+        })
+      );
+
+    const apiClient = new TickTickApiClient({
+      baseUrl: "https://api.ticktick.com/open/v1",
+      getAccessToken: () => "token-123",
+      fetchImplementation: fetchMock,
+      maxRetries: 2,
+      retryBaseDelayMs: 1,
+      timeoutMs: 500,
+    });
+    const gateway = createTickTickGateway(apiClient);
+    const useCases = createTickTickUseCases(gateway);
+
+    await expect(useCases.listProjects.execute()).rejects.toMatchObject({
+      category: "auth_401",
+      retriable: false,
+      status: 401,
+      responseBody: "invalid bearer token",
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it("maps 403 api error to auth_403 domain error", async () => {
     const gateway = {
       updateTask: vi.fn(async () => {
@@ -98,6 +133,47 @@ describe("integration error mapping (usecases <- gateway/api)", () => {
       status: 403,
       responseBody: { message: "insufficient_scope" },
     });
+  });
+
+  it("maps 403 empty-body variant to auth_403 via gateway->usecase path", async () => {
+    const fetchMock = vi
+      .fn<
+        (url: string, init: { headers: Record<string, string> }) => Promise<MockResponse>
+      >()
+      .mockResolvedValueOnce(
+        createMockResponse({
+          ok: false,
+          status: 403,
+          statusText: "Forbidden",
+          body: undefined,
+          contentType: "application/json",
+        })
+      );
+
+    const apiClient = new TickTickApiClient({
+      baseUrl: "https://api.ticktick.com/open/v1",
+      getAccessToken: () => "token-123",
+      fetchImplementation: fetchMock,
+      maxRetries: 2,
+      retryBaseDelayMs: 1,
+      timeoutMs: 500,
+    });
+    const gateway = createTickTickGateway(apiClient);
+    const useCases = createTickTickUseCases(gateway);
+
+    try {
+      await useCases.listProjects.execute();
+      throw new Error("Expected auth_403 error");
+    } catch (error) {
+      expect(error).toMatchObject({
+        category: "auth_403",
+        retriable: false,
+        status: 403,
+      });
+      expect(error).toHaveProperty("responseBody", undefined);
+    }
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it("maps 404 api error to not_found_404 domain error", async () => {
