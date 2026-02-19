@@ -6,7 +6,7 @@
 - Agent Team 역할 분리 기반으로 구현 진행
 
 ## 현재 단계
-- 상태: Gate 3 진행 - OAuth 런타임 클라이언트 + Runtime Factory + Auth/API/Core 테스트 본문 반영 완료
+- 상태: Gate 3 진행 - OAuth 런타임 클라이언트 + Runtime Factory + Auth/API/Core 테스트 본문 반영 완료 + `SKILL.md` 정규화 완료
 - 코드베이스: TypeScript strict + Vitest 기준으로 계약 + 실행(runtime/usecase/gateway) + 에러 매핑 검증까지 반영
 
 ## 구현된 스캐폴딩(2026-02-18)
@@ -54,13 +54,19 @@
 - 루트 `README.md`를 step-by-step 시작 가이드로 재작성
 - 검증 상태: `npm run typecheck`, `npm test` 통과
 
+## 이번 세션 변경점(2026-02-19)
+- 레퍼런스 URL(`https://clawhub.ai/pskoett/self-improving-agent`)의 `SKILL.md` 원문을 기준으로 루트 `SKILL.md`를 정규화
+- `SKILL.md`에 Quick Reference, Capabilities, OpenClaw Setup, CLI Workflow, Programmatic Workflow, Error Mapping, Verification Gates, Troubleshooting 섹션 추가
+- 문서 내용은 현재 구현 파일(`skill-entry/*`, `scripts/ticktick-cli.mjs`, `src/core/*`, `src/api/*`)과 일치하도록 정렬
+- 검증 상태: `npm install`, `npm run typecheck`, `npm test` 통과
+
 ## 이번 세션 증빙 체크리스트
-- [ ] 구현/테스트 변경 요약 1-3줄 갱신(무엇/왜)
-- [ ] 변경 파일 목록 반영(`src/...`, `tests/...`, `docs/...`)
-- [ ] 검증 명령과 결과 기록(`npm run typecheck`, `npm test`, 필요 시 추가 명령)
+- [x] 구현/테스트 변경 요약 1-3줄 갱신(무엇/왜)
+- [x] 변경 파일 목록 반영(`src/...`, `tests/...`, `docs/...`)
+- [x] 검증 명령과 결과 기록(`npm run typecheck`, `npm test`, 필요 시 추가 명령)
 - [ ] 변경 파일 LSP diagnostics 결과 기록(clean 또는 오류 파일 명시)
-- [ ] 미해결 이슈만 `## 오픈 리스크`에 반영
-- [ ] `docs/progress-log.md`에 Evidence(`files`, `checks`) append
+- [x] 미해결 이슈만 `## 오픈 리스크`에 반영
+- [x] `docs/progress-log.md`에 Evidence(`files`, `checks`) append
 
 ## 다음 게이트
 - Gate 1: 기본 스캐폴딩/문서 체계 완료(달성)
