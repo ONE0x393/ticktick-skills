@@ -335,3 +335,44 @@ Next actions:
 1. 실 TickTick 토큰 환경에서 `ticktick:smoke` live 실행 및 응답 샘플 저장
 2. 네트워크 예외(ECONNRESET/fetch reject) 통합 매핑 테스트 보강
 3. 운영 문서(README/SKILL)에 live 검증 결과 반영
+
+## 2026-02-19 21:37 (KST)
+Session Goal:
+- 네트워크 예외(ECONNRESET/fetch reject) 경로를 통합 에러 매핑 테스트에 추가해 회귀 방지 강화
+
+분석:
+- 이전까지 상태코드(401/403/404/429/5xx)와 timeout/unknown은 커버되었지만, 일반 Error/TypeError 기반 네트워크 예외 케이스는 누락
+- 다음 세션 액션에서 네트워크 예외 보강이 남아 있었음
+
+목표:
+- usecase 경계에서 네트워크 계열 throw(Error/TypeError)가 `network` + retriable로 일관 매핑되는지 검증
+- 문서 상태를 최신 테스트 범위에 맞춰 동기화
+
+결과:
+- `tests/unit/integration-error-mapping.unit.test.ts` 확장
+  - `Error("socket hang up ECONNRESET")` -> `network` + retriable
+  - `TypeError("fetch failed")` -> `network` + retriable
+  - 기존 401/403/404/429/5xx/timeout/unknown 시나리오 유지
+- 문서 동기화: `docs/current-status.md`, `docs/next-session.md`, `docs/progress-log.md`
+
+달성:
+- `npm run typecheck`, `npm test` 모두 PASS (5 files, 23 tests)
+- 통합 경계 에러 매핑 회귀 감시가 HTTP 상태코드 + 네트워크 예외까지 확장됨
+
+What changed:
+- `tests/unit/integration-error-mapping.unit.test.ts`
+- `docs/current-status.md`
+- `docs/next-session.md`
+- `docs/progress-log.md`
+
+Evidence:
+- files: `tests/unit/integration-error-mapping.unit.test.ts`, `docs/current-status.md`, `docs/next-session.md`, `docs/progress-log.md`
+- checks: `npm run typecheck`, `npm test`
+
+Risks/Blockers:
+- 실 API sandbox 기반 live smoke 실행/샘플 응답 캡처는 여전히 미완료
+
+Next actions:
+1. 실 TickTick 토큰 환경에서 `ticktick:smoke` live 실행 및 응답 샘플 저장
+2. gateway 레벨 재시도/회복(일시 실패 후 성공) 시나리오 테스트 추가
+3. 운영 문서(README/SKILL)에 live 검증 결과 반영

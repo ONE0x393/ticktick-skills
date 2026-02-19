@@ -148,6 +148,38 @@ describe("integration error mapping (usecases <- gateway/api)", () => {
     });
   });
 
+  it("maps network-like Error (e.g., ECONNRESET) to retriable network domain error", async () => {
+    const gateway = {
+      listTasks: vi.fn(async () => {
+        const error = new Error("socket hang up ECONNRESET");
+        error.name = "FetchError";
+        throw error;
+      }),
+    } as any;
+
+    const useCases = createTickTickUseCases(gateway);
+
+    await expect(useCases.listTasks.execute()).rejects.toMatchObject({
+      category: "network",
+      retriable: true,
+    });
+  });
+
+  it("maps rejected fetch TypeError to retriable network domain error", async () => {
+    const gateway = {
+      listProjects: vi.fn(async () => {
+        throw new TypeError("fetch failed");
+      }),
+    } as any;
+
+    const useCases = createTickTickUseCases(gateway);
+
+    await expect(useCases.listProjects.execute()).rejects.toMatchObject({
+      category: "network",
+      retriable: true,
+    });
+  });
+
   it("maps unknown thrown values to unknown non-retriable domain error", async () => {
     const gateway = {
       completeTask: vi.fn(async () => {
