@@ -251,3 +251,44 @@ Next actions:
 1. 실 토큰 환경에서 `npm run ticktick:smoke -- --projectId <id>` smoke flow 실행
 2. live 실행 결과를 바탕으로 docs/openclaw-skill-guide.md의 스모크 절차 보강
 3. 필요 시 종료 코드 정책(특히 성공/실패 메시지)을 명시적으로 문서화
+
+## 2026-02-19 19:38 (KST)
+Session Goal:
+- usecase/gateway 통합 에러 매핑 테스트를 추가해 핵심 실패 경로 회귀를 방지
+
+분석:
+- 다음 세션 액션에 통합 에러 매핑 테스트(401/403/404/429/5xx + network) 필요가 남아 있었음
+- 현재 테스트는 API 단위/코어 단위 위주로, usecase 경계에서의 매핑 회귀 방어가 제한적이었음
+
+목표:
+- usecase 경계에서 API/timeout/unknown 에러가 domain category로 안정 변환되는지 자동 검증
+- 세션 문서를 최신 상태로 동기화
+
+결과:
+- `tests/unit/integration-error-mapping.unit.test.ts` 신규 추가
+  - 429 API 에러 -> `rate_limit_429` + retriable/status/responseBody 검증
+  - timeout 에러 -> `network` + retriable 검증
+  - unknown throw 값 -> `unknown` + non-retriable 검증
+- `docs/current-status.md`, `docs/next-session.md`, `docs/progress-log.md` 동기화
+
+달성:
+- `npm run typecheck`, `npm test` 모두 PASS (5 files, 17 tests)
+- 통합 경계에서 에러 분류 회귀 감시 범위 확대
+
+What changed:
+- `tests/unit/integration-error-mapping.unit.test.ts`
+- `docs/current-status.md`
+- `docs/next-session.md`
+- `docs/progress-log.md`
+
+Evidence:
+- files: `tests/unit/integration-error-mapping.unit.test.ts`, `docs/current-status.md`, `docs/next-session.md`, `docs/progress-log.md`
+- checks: `npm run typecheck`, `npm test`
+
+Risks/Blockers:
+- 실 API 기반 샘플 응답 캡처(필드 alias/complete endpoint 응답 형태)는 여전히 미완료
+
+Next actions:
+1. 실 TickTick 토큰 환경에서 `ticktick:smoke` live 실행 및 결과 캡처
+2. 통합 에러 매핑 테스트를 401/403/404/5xx 케이스로 확장
+3. 운영 문서에 live 검증 결과 반영

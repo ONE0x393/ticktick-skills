@@ -65,6 +65,7 @@
 - `package.json`에 `ticktick:smoke` 스크립트 등록
 - GitHub Issue #1(`Smoke test dry-run should not hard-fail when env vars are missing`) 대응 완료
 - `tests/unit/ticktick-smoke.unit.test.ts` 추가: `--help`, `--dryRun` 핵심 동작을 자동 검증
+- `tests/unit/integration-error-mapping.unit.test.ts` 추가: usecase/gateway 경로에서 429, timeout, unknown 에러 매핑 검증
 - 검증 상태: `npm run typecheck`, `npm test` 통과
 - 문서 동기화: `docs/current-status.md`, `docs/next-session.md`, `docs/progress-log.md` 갱신
 
