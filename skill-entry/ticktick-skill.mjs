@@ -12,7 +12,7 @@ import {
  * @param {object} [options]
  * @param {string} [options.tokenPath] - JSON file path containing `accessToken`
  * @param {() => Promise<string>} [options.getAccessToken] - custom token provider
- * @param {(payload: {reason:string,message:string,authUrl:string,state:string,tokenPath:string}) => Promise<void>} [options.onReauthRequired]
+ * @param {(payload: {reason:string,message:string,authUrl:string,state:string}) => Promise<void>} [options.onReauthRequired]
  * @param {import('../dist/src/config/ticktick-env.js').TickTickEnvSchema} [options.env]
  */
 export function createTickTickOpenClawSkill(options = {}) {

@@ -1,6 +1,7 @@
 ---
 name: ticktick
 description: "TickTick task/project integration toolkit for OAuth2 authorization, token refresh, and typed task/project operations. Use when users need to authenticate with TickTick, run task/project CRUD workflows, or operate the OpenClaw/Codex wrapper via token.json."
+metadata: {"openclaw":{"requires":{"env":["TICKTICK_CLIENT_ID","TICKTICK_CLIENT_SECRET","TICKTICK_REDIRECT_URI"]},"primaryEnv":"TICKTICK_CLIENT_SECRET"}}
 ---
 
 # TickTick Skill

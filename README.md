@@ -179,6 +179,9 @@ Domain errors use `TickTickDomainError` with categories:
 - `npm test` - run unit tests
 - `npm run build` - compile TS to `dist/`
 - `npm run ticktick:cli -- <command>` - run helper CLI
+- `npm run ticktick:smoke -- [--env <path>] [--projectId <id>] [--tokenPath <path>] [--dryRun]`
+  - 프로젝트 조회 + 선택 후, 기본 동작은 `create/update/complete` smoke flow 실행
+  - `--dryRun`은 읽기 전용 검증만 수행하며, 필수 env 미설정 시에는 안내 메시지 후 종료 코드 0으로 종료
 
 ## Helper CLI (token.json 기반)
 
@@ -222,6 +225,7 @@ npm run ticktick:cli -- complete-task --taskId <taskId>
 ### 자동 사용자 알림 훅 (Webhook)
 
 재인증이 필요한 순간 자동으로 웹훅 POST를 보낼 수 있습니다.
+웹훅 URL은 **HTTPS만 허용**합니다.
 
 ```env
 TICKTICK_REAUTH_WEBHOOK_URL=https://your-webhook.example/path
@@ -236,10 +240,9 @@ TICKTICK_REAUTH_NOTIFY_STATE_PATH=~/.config/ticktick/reauth-notify-state.json
   "type": "ticktick.reauth_required",
   "occurredAtUtc": "2026-02-18T08:20:00.000Z",
   "reason": "expired_or_refresh_failed",
-  "message": "Access token expired and refresh token is unavailable (or refresh failed). Reauthorization required.",
+  "message": "Access token expired or refresh failed. OAuth reauthorization is required.",
   "authUrl": "https://ticktick.com/oauth/authorize?...",
-  "state": "oc_xxxxx",
-  "tokenPath": "/home/ubuntu/.config/ticktick/token.json"
+  "state": "oc_xxxxx"
 }
 ```
 

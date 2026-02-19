@@ -108,9 +108,29 @@ async function shouldNotifyNow({ statePath = DEFAULT_NOTIFY_STATE_PATH, cooldown
   return true;
 }
 
+function normalizeWebhookUrl(rawUrl) {
+  if (typeof rawUrl !== "string" || rawUrl.trim().length === 0) {
+    return undefined;
+  }
+
+  const parsed = new URL(rawUrl);
+  if (parsed.protocol !== "https:") {
+    throw new Error("TICKTICK_REAUTH_WEBHOOK_URL must use https.");
+  }
+
+  return parsed.toString();
+}
+
+function buildReauthMessage(reason) {
+  if (reason === "token_file_missing") {
+    return "Token file is missing. OAuth reauthorization is required.";
+  }
+  return "Access token expired or refresh failed. OAuth reauthorization is required.";
+}
+
 export function createWebhookReauthNotifierFromEnv(options = {}) {
-  const webhookUrl = options.webhookUrl ?? process.env.TICKTICK_REAUTH_WEBHOOK_URL;
-  if (!webhookUrl || webhookUrl.trim().length === 0) {
+  const webhookUrl = normalizeWebhookUrl(options.webhookUrl ?? process.env.TICKTICK_REAUTH_WEBHOOK_URL);
+  if (!webhookUrl) {
     return undefined;
   }
 
@@ -145,15 +165,14 @@ export function createWebhookReauthNotifierFromEnv(options = {}) {
   };
 }
 
-async function emitReauthNotification({ onReauthRequired, reason, error, tokenPath }) {
+async function emitReauthNotification({ onReauthRequired, reason, error }) {
   if (typeof onReauthRequired !== "function") return;
 
   const payload = {
     reason,
-    message: error.message,
+    message: buildReauthMessage(reason),
     authUrl: error.authUrl,
     state: error.state,
-    tokenPath,
   };
 
   try {
@@ -181,7 +200,6 @@ export async function getAccessTokenWithAutoReauth({ tokenPath = DEFAULT_TOKEN_P
       onReauthRequired,
       reason: "token_file_missing",
       error: reauthError,
-      tokenPath,
     });
     throw reauthError;
   }
@@ -218,7 +236,6 @@ export async function getAccessTokenWithAutoReauth({ tokenPath = DEFAULT_TOKEN_P
     onReauthRequired,
     reason: "expired_or_refresh_failed",
     error: reauthError,
-    tokenPath,
   });
 
   throw reauthError;
