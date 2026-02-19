@@ -376,3 +376,44 @@ Next actions:
 1. 실 TickTick 토큰 환경에서 `ticktick:smoke` live 실행 및 응답 샘플 저장
 2. gateway 레벨 재시도/회복(일시 실패 후 성공) 시나리오 테스트 추가
 3. 운영 문서(README/SKILL)에 live 검증 결과 반영
+
+## 2026-02-19 22:37 (KST)
+Session Goal:
+- gateway 경계에서 retryable 5xx 회복(첫 실패 후 성공) 동작을 통합 테스트로 검증
+
+분석:
+- 기존 통합 테스트는 에러 분류 자체는 폭넓게 커버하지만, 실제 API client 재시도 후 성공 회복 시나리오 검증은 없었음
+- 다음 세션 액션에 gateway 레벨 재시도/회복 assertion 보강 항목이 남아 있었음
+
+목표:
+- usecase -> gateway -> apiClient 경로에서 첫 5xx 실패 후 재시도로 성공하는 흐름을 자동 검증
+- 문서 상태를 최신 테스트 범위로 동기화
+
+결과:
+- `tests/unit/integration-error-mapping.unit.test.ts` 확장
+  - mock fetch 첫 호출 502, 두 번째 호출 200 응답 구성
+  - `listProjects`가 최종 성공하고 fetch 호출 횟수 2회임을 검증
+  - 기존 401/403/404/429/timeout/network/unknown 시나리오 유지
+- 문서 동기화: `docs/current-status.md`, `docs/next-session.md`, `docs/progress-log.md`
+
+달성:
+- `npm run typecheck`, `npm test` 모두 PASS (5 files, 24 tests)
+- 통합 경계 테스트가 에러 분류 + 재시도 회복 동작까지 커버
+
+What changed:
+- `tests/unit/integration-error-mapping.unit.test.ts`
+- `docs/current-status.md`
+- `docs/next-session.md`
+- `docs/progress-log.md`
+
+Evidence:
+- files: `tests/unit/integration-error-mapping.unit.test.ts`, `docs/current-status.md`, `docs/next-session.md`, `docs/progress-log.md`
+- checks: `npm run typecheck`, `npm test`
+
+Risks/Blockers:
+- 실 API sandbox 기반 live smoke 실행/응답 샘플 캡처는 여전히 미완료
+
+Next actions:
+1. 실 TickTick 토큰 환경에서 `ticktick:smoke` live 실행 및 응답 샘플 저장
+2. 비재시도 4xx에서 재호출 미발생 assertion 보강
+3. 운영 문서(README/SKILL)에 live 검증 결과 반영
