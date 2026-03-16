@@ -174,6 +174,7 @@ OpenClaw 액션 응답에는 최소 아래를 포함하세요.
 추가 참고:
 - 도시명(예: 서울)은 IANA로 매핑 후 저장 (`Asia/Seoul`)
 - skill-entry는 날짜 포맷을 TickTick 친화형(`+HHMM`)으로 정규화
+- `create_task`/`update_task` 후 `list_tasks` 재조회로 날짜 필드 반영 여부를 자동 검증
 
 ## 8) 배포 전 체크리스트
 

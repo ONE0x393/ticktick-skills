@@ -231,6 +231,9 @@ OpenClaw skill entry(`skill-entry/ticktick-skill.mjs`)는 TimeZone 상태를 저
 일정 관련 액션(`create_task`, `update_task`, `list_tasks`, `complete_task`, `list_projects`)은
 timezone 미설정이면 에러로 안내하고, 설정 이후 재시도하면 정상 동작합니다.
 
+또한 `create_task`/`update_task`는 실행 후 내부적으로 `list_tasks` 재조회 검증을 수행해
+`startDate`/`dueDate`가 실제 저장되지 않았을 때 즉시 실패로 감지합니다.
+
 날짜/시간 문자열은 skill에서 자동 정규화합니다.
 
 - `+09:00` -> `+0900`

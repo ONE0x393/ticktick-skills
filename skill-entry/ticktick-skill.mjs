@@ -170,6 +170,99 @@ function normalizeDateFields(input, timezone) {
   return cloned;
 }
 
+function pickExpectedDateFields(input) {
+  const expected = {};
+  if (input && typeof input === "object") {
+    if (Object.prototype.hasOwnProperty.call(input, "startDate")) {
+      expected.startDate = input.startDate;
+    }
+    if (Object.prototype.hasOwnProperty.call(input, "dueDate")) {
+      expected.dueDate = input.dueDate;
+    }
+  }
+  return expected;
+}
+
+function hasDateExpectation(expected) {
+  return Object.prototype.hasOwnProperty.call(expected, "startDate") || Object.prototype.hasOwnProperty.call(expected, "dueDate");
+}
+
+function datesEquivalent(expected, actual) {
+  if (expected === actual) {
+    return true;
+  }
+
+  if (typeof expected !== "string" || typeof actual !== "string") {
+    return false;
+  }
+
+  const expectedTime = Date.parse(expected);
+  const actualTime = Date.parse(actual);
+  if (!Number.isNaN(expectedTime) && !Number.isNaN(actualTime)) {
+    return expectedTime === actualTime;
+  }
+
+  return expected.replace(/([+-]\d{2}):(\d{2})$/, "$1$2") === actual.replace(/([+-]\d{2}):(\d{2})$/, "$1$2");
+}
+
+function dateFieldMatches(expected, actual) {
+  if (expected === null) {
+    return actual === undefined || actual === null;
+  }
+
+  if (expected === undefined) {
+    return true;
+  }
+
+  return datesEquivalent(expected, actual);
+}
+
+async function verifyTaskDatePersistence(runtime, task, expected, contextLabel) {
+  if (!hasDateExpectation(expected)) {
+    return;
+  }
+
+  if (!task?.id || !task?.projectId) {
+    throw new Error(`[${contextLabel}] Cannot verify date persistence: missing task id/projectId in response.`);
+  }
+
+  let lastSeen;
+  const attempts = 3;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    const tasks = await runtime.useCases.listTasks.execute({
+      projectId: task.projectId,
+      includeCompleted: true,
+      limit: 200,
+    });
+
+    const current = tasks.find((item) => item.id === task.id);
+    if (current) {
+      lastSeen = current;
+      const startOk = dateFieldMatches(expected.startDate, current.startDate);
+      const dueOk = dateFieldMatches(expected.dueDate, current.dueDate);
+      if (startOk && dueOk) {
+        return;
+      }
+    }
+
+    if (attempt < attempts) {
+      await new Promise((resolve) => setTimeout(resolve, 300 * attempt));
+    }
+  }
+
+  throw new Error(
+    [
+      `[${contextLabel}] TickTick date persistence check failed after create/update.`,
+      `taskId=${task.id}`,
+      `expected.startDate=${String(expected.startDate)}`,
+      `expected.dueDate=${String(expected.dueDate)}`,
+      `actual.startDate=${String(lastSeen?.startDate)}`,
+      `actual.dueDate=${String(lastSeen?.dueDate)}`,
+      "Please retry with an explicit datetime and timezone.",
+    ].join(" ")
+  );
+}
+
 /**
  * Build OpenClaw-ready TickTick skill actions.
  *
@@ -243,9 +336,19 @@ export function createTickTickOpenClawSkill(options = {}) {
           updatedAtUtc: state.updatedAtUtc,
         };
       },
-      create_task: withTimezone((input) => runtime.useCases.createTask.execute(input)),
+      create_task: withTimezone(async (input) => {
+        const created = await runtime.useCases.createTask.execute(input);
+        const expected = pickExpectedDateFields(input);
+        await verifyTaskDatePersistence(runtime, created, expected, "create_task");
+        return created;
+      }),
       list_tasks: withTimezone((input) => runtime.useCases.listTasks.execute(input)),
-      update_task: withTimezone((input) => runtime.useCases.updateTask.execute(input)),
+      update_task: withTimezone(async (input) => {
+        const updated = await runtime.useCases.updateTask.execute(input);
+        const expected = pickExpectedDateFields(input);
+        await verifyTaskDatePersistence(runtime, updated, expected, "update_task");
+        return updated;
+      }),
       complete_task: withTimezone((input) => runtime.useCases.completeTask.execute(input)),
       list_projects: withTimezone((input) => runtime.useCases.listProjects.execute(input)),
     },
