@@ -216,6 +216,34 @@ npm run ticktick:cli -- create-task --projectId <projectId> --title "Write docs"
 npm run ticktick:cli -- complete-task --taskId <taskId>
 ```
 
+### OpenClaw TimeZone 초기 설정 플로우 (신규)
+
+OpenClaw skill entry(`skill-entry/ticktick-skill.mjs`)는 TimeZone 상태를 저장합니다.
+
+- 상태 파일 기본 경로: `skill-entry/.ticktick-skill-state.json`
+- 환경변수로 변경 가능: `TICKTICK_SKILL_STATE_PATH`
+
+추가된 액션:
+
+- `get_timezone` : 현재 설정된 timezone 조회
+- `set_timezone` : IANA timezone 저장 (예: `Asia/Seoul`)
+
+일정 관련 액션(`create_task`, `update_task`, `list_tasks`, `complete_task`, `list_projects`)은
+timezone 미설정이면 에러로 안내하고, 설정 이후 재시도하면 정상 동작합니다.
+
+날짜/시간 문자열은 skill에서 자동 정규화합니다.
+
+- `+09:00` -> `+0900`
+- `Z` 포함 ISO -> 설정된 timezone 기준 `...+HHMM`
+
+권장 운영(에이전트):
+
+1. TickTick 호출 전 `get_timezone`
+2. 미설정이면 사용자에게 1회 질문
+   - "현재 거주/기준 시간대가 어디인가요? (예: Asia/Seoul)"
+3. 사용자 응답으로 `set_timezone`
+4. 원래 요청 작업 재실행
+
 ### 자동 재인증/토큰 갱신
 
 - 토큰이 유효하면 그대로 사용

@@ -22,15 +22,20 @@
 
 권장: Skill 액션 구현에서는 `createTickTickRuntime`를 기본으로 쓰고, 액션별로 `runtime.useCases.*`를 호출합니다.
 
-## 2) Skill 액션 설계 (MVP 5개)
+## 2) Skill 액션 설계
 
 OpenClaw에 아래 액션 단위로 등록하면 바로 실무에 쓰기 좋습니다.
 
+기본 작업 액션:
 1. `ticktick.create_task`
 2. `ticktick.list_tasks`
 3. `ticktick.update_task`
 4. `ticktick.complete_task`
 5. `ticktick.list_projects`
+
+TimeZone 초기 설정 액션:
+6. `ticktick.get_timezone`
+7. `ticktick.set_timezone`
 
 입출력 스키마는 이미 도메인 계약에 맞춰 정의되어 있습니다.
 - Task 계약: `src/domain/task-contract.ts`
@@ -95,7 +100,7 @@ OpenClaw 버전에 따라 키 이름이 조금 다를 수 있으니, 아래 구�
 
 - `name`: `ticktick`
 - `description`: TickTick task/project integration skill
-- `actions`: 위 5개 액션
+- `actions`: 작업 5개 + timezone 2개 액션
 - `env`: 필수 env var 목록
 - `entry`: Skill 래퍼 파일(예: `skill-entry/ticktick-skill.ts`)
 
@@ -111,6 +116,10 @@ env:
     - TICKTICK_CLIENT_SECRET
     - TICKTICK_REDIRECT_URI
 actions:
+  - name: get_timezone
+    handler: getTimezone
+  - name: set_timezone
+    handler: setTimezone
   - name: create_task
     handler: createTask
   - name: list_tasks
@@ -152,7 +161,21 @@ OpenClaw 액션 응답에는 최소 아래를 포함하세요.
 - `retriable`
 - `status` (있으면)
 
-## 7) 배포 전 체크리스트
+## 7) TimeZone 첫 사용 UX (권장)
+
+에이전트/오케스트레이터는 아래 순서를 권장합니다.
+
+1. TickTick 액션 전에 `ticktick.get_timezone` 호출
+2. 미설정이면 사용자에게 1회 질문
+   - "현재 거주/기준 시간대가 어디인가요? (예: Asia/Seoul)"
+3. 사용자 답으로 `ticktick.set_timezone` 호출
+4. 원래 요청한 TickTick 작업을 재실행
+
+추가 참고:
+- 도시명(예: 서울)은 IANA로 매핑 후 저장 (`Asia/Seoul`)
+- skill-entry는 날짜 포맷을 TickTick 친화형(`+HHMM`)으로 정규화
+
+## 8) 배포 전 체크리스트
 
 - [ ] `npm run typecheck` 통과
 - [ ] `npm test` 통과
@@ -161,7 +184,7 @@ OpenClaw 액션 응답에는 최소 아래를 포함하세요.
 - [ ] 액션 5종 smoke 테스트
 - [ ] 401/403/404/429/5xx 에러 핸들링 확인
 
-## 8) 빠른 smoke 시나리오
+## 9) 빠른 smoke 시나리오
 
 1. `list_projects` 호출
 2. 첫 project로 `create_task`
@@ -169,7 +192,7 @@ OpenClaw 액션 응답에는 최소 아래를 포함하세요.
 4. 생성한 task `complete_task`
 5. `list_tasks`에서 결과 검증
 
-## 9) 참고 파일
+## 10) 참고 파일
 
 - `README.md`
 - `src/core/ticktick-runtime.ts`
